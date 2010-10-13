@@ -1,0 +1,182 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+
+<head>
+  <title>Yoplet Test page</title>
+</head>
+
+<body>
+
+<h1>Welcome to the Yoplet, the file manipulation applet</h1>
+
+<p>Yoplet helps you
+
+<ul>
+  <li>Write down to a local file</li>
+  <li>Read up a local file</li>
+  <li>Watch for a local file alteration (creation, modification, deletion)</li>
+</ul>
+
+<h2>Applet creation via HTML</h2>
+
+<p>Here, the applet element is hard coded in HTML coded and will perform one action, 
+depending on <tt>action</tt> parameter value.</p>
+
+<applet 
+  code="org.yoplet.Yoplet.class" 
+  archive="../build/archives/yoplet.jar" 
+  width="600" 
+  height="200">
+  <param name="action" value="write" />
+  <param name="debug" value="true" />
+  <param name="filePath"  value="C:\Documents and Settings\Thomas\Mes documents\Yoplet html.txt" />
+  <param name="flagPath"  value="C:\Documents and Settings\Thomas\Mes documents\Yoplet html.flg" />
+  <param name="lineSeparator"  value="---" />
+  <param name="url" value="http://erwan.legoulven.free.fr/index.php" />
+  <param name="content" value="Yet a multiline content---with a line---and another---and a last one"/>
+</applet>
+
+<hr />
+
+<h2>Applet creation via HTML, action call via Javacript</h2>
+
+<p>Here, the applet element is hard coded in HTML coded but will perform one action (sleep mode), 
+then javascript on <tt>action</tt> parameter value.</p>
+<p>Javascript calls are synchronous, meaning its thread will start running again after the action
+is actually performed (file read, written or altered);</p>
+
+<script type="text/javascript">
+
+var Yoplet = {
+  read: function() {
+    document.yoplet.performRead();
+    var alertContent = function() {
+      // Append with empty Js String will cast a Java string to a Js string
+      var content = document.yoplet.getContent() + ""; 
+      alert('File read, content is:\n' + content);
+    }
+    
+    // Give Java a bit of time before reading content
+    setTimeout(alertContent, 200);
+  },
+  write: function(content) {
+    document.yoplet.performWrite(content); 
+    alert('File written, content is:\n' + content);
+  },
+  watch: function() {
+	document.yoplet.performWatch(); 
+	alert('File exists ');
+  }
+}
+
+</script>
+
+<button onclick="Yoplet.read();">Read with Yoplet</button>
+<button onclick="Yoplet.write('Line1---Line2');">Write with Yoplet</button>
+<button onclick="Yoplet.watch();">Watch with Yoplet</button>
+
+<applet 
+  name="yoplet"
+  code="org.yoplet.Yoplet.class" 
+  archive="../build/archives/yoplet.jar" 
+  width="600" 
+  height="200">
+  <param name="action" value="sleep"/>
+  <param name="lineSeparator"  value="---" />
+  <param name="debug" value="true" />
+  <param name="filePath"  value="C:\Documents and Settings\Thomas\Mes documents\Yoplet htmljs.txt" />
+  <param name="flagPath"  value="C:\Documents and Settings\Thomas\Mes documents\Yoplet htmljs.flg" />
+  <param name="url" value="http://erwan.legoulven.free.fr/index.php" />
+  <param name="content" value="" />
+</applet>
+
+<hr />
+
+<h2>Applet creation via Javascript</h2>
+
+<p>Here, the applet element is dynamically created with a Javascript helper object named <tt>Yoplet</tt>.
+Clicking on a button will ask <tt>Yoplet</tt> to create a <tt>&lt;applet&gt;</tt> element, 
+with appropriate parameters, then trigger the action by attaching the element to the DOM.
+depending on <tt>action</tt> parameter value. If you click to another action button,
+<tt>Yoplet</tt> will remove the former <tt>&lt;applet&gt;</tt> and will create a new one</p>
+
+<script type="text/javascript">
+
+var YopletCreator = {
+  options : {
+    parentElement: "js-applet"
+  },
+  
+  attributes: {
+    code: "org.yoplet.Yoplet.class",
+    archive: "../build/archives/yoplet.jar",
+    width: "600",
+    height: "200"    
+  },
+  
+  parameters: {
+    lineSeparator: "---",
+    filePath: "C:\\Documents and Settings\\Thomas\\Mes documents\\Yoplet file.txt",
+    content: "A small test content",
+    url: "http://erwan.legoulven.free.fr/index.php",
+    debug: "true"
+  },
+  
+  appletElement: null, 
+  
+  createAppletElement: function() {
+    var parentElement = document.getElementById(this.options.parentElement);
+     
+    // Remove element if exist
+    if (this.appletElement) {
+      this.appletElement.parentNode.removeChild(this.appletElement);
+    }
+    
+    // Create an applet element
+    this.appletElement = document.createElement("applet");
+
+    // Add attributes
+    for (attribute in this.attributes) {
+      this.appletElement.setAttribute(attribute, this.attributes[attribute]);
+    }
+    
+    // Add parameters
+    for (parameter in this.parameters) {
+      var paramElement = document.createElement("param");
+      paramElement.setAttribute("name", parameter);
+      paramElement.setAttribute("value", this.parameters[parameter]);
+      this.appletElement.appendChild(paramElement);
+    }
+    
+    // Final append to parent element when applet element is complete
+    parentElement.appendChild(this.appletElement);
+  },
+  
+  read: function() {
+    this.parameters.action = "read";
+    this.createAppletElement(document.body);
+  },
+  
+  write: function() {
+    this.parameters.action = "write";
+    this.createAppletElement(document.body);
+  },
+  
+  watch: function() {
+    this.parameters.action = "watch";
+    this.createAppletElement(document.body);
+  }
+}
+
+</script>
+
+<button onclick="YopletCreator.read()">Read with Yoplet</button>
+<button onclick="YopletCreator.write()">Write with Yoplet</button>
+<button onclick="YopletCreator.watch()">Watch with Yoplet</button>
+
+<div id="js-applet" ></div>
+
+</body>
+</html>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src/java"/>
+	<classpathentry kind="src" path="test/java"/>
+	<classpathentry excluding="views/" kind="src" path="web/y0pl3t/app"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="build/lib/plugin-jar.jar"/>
+	<classpathentry kind="lib" path="lib/compile/commons-io.jar"/>
+	<classpathentry kind="lib" path="lib/compile/json-simple.jar"/>
+	<classpathentry kind="lib" path="lib/test/junit.jar"/>
+	<classpathentry kind="lib" path="lib/compile/commons-codec.jar"/>
+	<classpathentry kind="lib" path="lib/compile/commons-httpclient.jar"/>
+	<classpathentry kind="lib" path="lib/compile/commons-logging.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Play-1.0.3"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/play-gae-1.0.3"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/play-siena-1.2"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

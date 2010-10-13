@@ -1,0 +1,55 @@
+<project basedir=".">
+	<tstamp>
+		<format property="NOW" pattern="MM/dd/yyyy hh:mm aa" />
+		<format property="TODAY" pattern="yyyy-MM-dd"/>
+	</tstamp>
+
+	<property environment="env"/>
+	<property file="ant.install.properties"/>
+
+	<target name="install" depends="init, gen-key, sign-jar"/>
+
+	<target name="init">
+		<echo>+--------------------------------------------------------------------+</echo>
+		<echo>|                                                                    |</echo>
+		<echo>| init                                                               |</echo>
+		<echo>|                                                                    |</echo>
+		<echo>+--------------------------------------------------------------------+</echo>
+
+		<condition property="isWindowsOs">
+			<and>
+				<os family="windows"/>
+			</and>
+		</condition>
+
+	</target>
+	
+	<target name="Base"/>
+	
+	<target name="gen-key" description="certificate generation (usefull for getting into the filesystem" if="gen.key" depends="del-key">
+		<genkey alias="${key.alias}" storepass="${key.store.pass}" verbose="true" >
+		  <dname>
+		    <param name="CN" value="${key.name}"/>
+		    <param name="OU" value="${key.organizational.unit}"/>
+		    <param name="O"  value="${key.organization}"/>
+   		    <param name="L"  value="${key.city}"/>
+		    <param name="C"  value="${key.country}"/>
+   		    <param name="ST"  value="${key.state}"/>
+		  </dname>
+		</genkey>
+	</target>
+	
+	<target name="sign-jar">
+		<signjar jar="${basedir}/lib/yoplet.jar" alias="${key.alias}" storepass="${key.store.pass}" verbose="false" destDir="${install_dir}" >
+			<fileset dir="${basedir}/lib/" includes="yoplet.jar"/>
+		</signjar>
+	</target>
+	
+	<target name="del-key" description="key certificate deletion">
+		<property name="exec" location="${env.JAVA_HOME}/bin/keytool"/>
+		<exec executable="${exec}">
+			<arg line="-delete -alias ${key.alias} -storepass ${key.store.pass}"/>
+		</exec>
+	</target>
+	
+</project>
