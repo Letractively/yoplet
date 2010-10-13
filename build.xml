@@ -1,0 +1,315 @@
+<project name="Yoplet" default="thirdparty" xmlns:artifact="urn:maven-artifact-ant">
+	
+	<property environment="myenv" />
+	<property file="build.properties"/>
+	
+	<path id="compile.path">
+		<fileset dir="${lib}/compile">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="${lib}/provided">
+			<include name="plugin-jar.jar" />
+		</fileset>		
+	</path>
+
+	<path id="test.path">
+		<fileset dir="${lib}/test">
+			<include name="*.jar" />
+		</fileset>
+	</path>	
+	
+	<target name="clean">
+		<delete failonerror="false">
+			<fileset dir="lib/compile" includes="*.jar"/>
+			<fileset dir="lib/test" includes="*.jar"/>
+		</delete>
+		<delete dir="build/archives" failonerror="false"/>
+		<delete dir="build/classes" failonerror="false"/>
+		<delete dir="build/installer" failonerror="false"/>		
+	</target>
+	
+	<target name="maven-def">
+		<mkdir dir="lib"/>
+		<path id="maven-ant-tasks.classpath" path="${maven}/maven-ant-tasks.jar" />
+		<typedef resource="org/apache/maven/artifact/ant/antlib.xml" uri="urn:maven-artifact-ant" classpathref="maven-ant-tasks.classpath" />
+		<artifact:pom id="maven.project" file="${maven}/pom.xml" />
+		<artifact:remoteRepository id="maven2-repository.dev.java.net" url="http://download.java.net/maven/2/maven2-repository.dev.java.net" />
+		<artifact:remoteRepository id="gdteam.release.repo" url="http://nexus.leyio.com/nexus/content/groups/gdteam.release.repo" />
+		<artifact:remoteRepository id="gdteam.snapshot.repo" url="http://nexus.leyio.com/nexus/content/groups/gdteam.snapshots.repo">
+		    <snapshots updatePolicy="always" />
+		</artifact:remoteRepository>
+		<artifact:localRepository id="local.repository" path="${user.home}/.hudson/m2/repository" />
+	</target>	
+	
+	<target name="thirdparty" unless="dev" depends="maven-def,clean">
+		<artifact:dependencies filesetId="compile.fileset" useScope="compile" settingsFile="${maven}/settings.xml" versionsId="compile.versions">
+			<pom refid="maven.project" />
+			<remoteRepository refid="maven2-repository.dev.java.net"/>
+			<remoteRepository refid="gdteam.release.repo" />
+			<remoteRepository refid="gdteam.snapshot.repo" />
+			<localRepository refid="local.repository" />
+		</artifact:dependencies>
+		
+		<copy todir="lib/compile">
+			<fileset refid="compile.fileset" />
+			<mapper classpathref="maven-ant-tasks.classpath" classname="org.apache.maven.artifact.ant.VersionMapper" from="${compile.versions}" to="flatten" />
+		</copy>
+		
+
+		<artifact:dependencies filesetId="test.fileset" useScope="test" settingsFile="${maven}/settings.xml" versionsId="test.versions">
+			<pom refid="maven.project" />
+			<remoteRepository refid="gdteam.release.repo" />
+			<remoteRepository refid="gdteam.snapshot.repo" />
+			<localRepository refid="local.repository" />
+		</artifact:dependencies>
+		<copy todir="lib/test">
+			<fileset refid="test.fileset" />
+			<mapper classpathref="maven-ant-tasks.classpath" classname="org.apache.maven.artifact.ant.VersionMapper" from="${test.versions}" to="flatten" />
+		</copy>
+	</target>
+
+	<target name="info"  description="gives info about the build file targets">
+		<echo>[target : compile]</echo>
+		<echo>run javac command over source code</echo>
+		<echo>[target : build]</echo>
+		<echo>main target, responsible for archive creation after compilation</echo>		
+		<echo>[target : run-test]</echo>
+		<echo>run the appletviewer executable in order to test the applet</echo>		
+		<echo>[target : gen-certificate]</echo>
+		<echo>associate a certificate to be accepted by applet client</echo>
+	</target>
+	
+	<target name="default-browser" unless="browser">
+		<property name="browser" value="firefox"/>
+	</target>
+	
+	<target name="firefox">
+		<property name="browser" value="firefox"/>
+	</target>
+	
+	<target name="init-browser" depends="default-browser">
+		<property file="conf/browser/${browser}.properties"/>
+		<echo>browser : ${browser}</echo>
+		<echo>executable path : ${browser-exec}</echo>
+	</target>
+	
+	<target name="ie">
+		<property name="browser" value="ie"/>
+	</target>	
+	
+	<target name="compile">
+		<tstamp>
+			<format property="NOW" pattern="MM/dd/yyyy hh:mm aa"/>
+		</tstamp>
+		<delete dir="build/classes"/>
+		<mkdir dir="build/classes"/>
+		
+		<javac  
+			destdir="build/classes" 
+			includes="**/*.java" 
+			deprecation="yes" 
+			debug="${debug}" 
+			source="${source}" 
+			target="${target}"
+			includeantruntime="false">
+			
+			<src path="src/java"/>
+			
+			<classpath refid="compile.path"/>
+		</javac>	
+	</target>
+	
+	
+	<target name="build" depends="compile">
+		<delete file="build/archives/yoplet.jar"/>
+		<mkdir dir="build/archives"/>
+		<jar destfile="build/archives/yoplet.jar" compress="true" duplicate="preserve" keepcompression="true">
+			<manifest>
+				<attribute name="Build-By" value="${user.name}" />
+				<section name="${ant.project.name}">
+					<attribute name="Specification-Title" value="${title}" />
+					<attribute name="Specification-Version" value="${build.version}" />
+					<attribute name="Implementation-Date" value="${NOW}" />
+				</section>
+			</manifest>
+			<fileset dir="build/classes" includes="**" excludes="**/*Test*"/>
+			<fileset dir="doc" includes="licence.txt"/>			
+			<zipfileset src="lib/compile/commons-codec.jar" includes="**/*" excludes="**/*.txt"/>
+			<zipfileset src="lib/compile/commons-io.jar" includes="**/*" excludes="**/*.txt"/>
+			<zipfileset src="lib/compile/commons-httpclient.jar" includes="**/*" excludes="**/*.txt"/>
+			<zipfileset src="lib/compile/commons-logging.jar" includes="**/*" excludes="**/*.txt"/>			
+			<zipfileset src="lib/compile/json-simple.jar" includes="**/*" excludes="**/*.txt"/>			
+		</jar>
+	</target>
+	
+	
+	<target name="gen-key" description="certificate generation (usefull for getting into the filesystem">
+		<genkey alias="${key.alias}" storepass="${key.store.pass}" verbose="true">
+		  <dname>
+		    <param name="CN" value="${key.name}"/>
+		    <param name="OU" value="${key.organizational.unit}"/>
+		    <param name="O"  value="${key.organization}"/>
+   		    <param name="L"  value="${key.city}"/>
+		    <param name="C"  value="${key.country}"/>
+   		    <param name="ST"  value="${key.state}"/>
+		  </dname>
+		</genkey>		
+	</target>
+	
+	<target name="del-key" description="key certificate deletion">
+		<property name="exec" location="${myenv.JAVA_HOME}/bin/keytool"/>
+		<echo>keytool executable :  ${exec}</echo>
+		<exec executable="${exec}">
+			<arg line="-delete -alias ${key.alias} -storepass ${key.store.pass}"/>
+		</exec>
+	</target>
+	
+	<target name="sign-jar" description="jar sign">
+		<!-- commons jars have ever been signed if new jars are used you must sign them -->
+		<signjar jar="build/archives/yoplet.jar" alias="${key.alias}" storepass="${key.store.pass}" verbose="true"/>
+	</target>
+	
+	<target name="release-src" depends="thirdparty, build">
+		<delete file="build/archives/yoplet-${build.version}.zip"/>
+		<delete file="build/archives/yoplet-${build.version}.tar.gz"/>
+		<zip destfile="build/archives/yoplet-${build.version}.zip">
+				<zipfileset dir="${basedir}" excludes="build/**,bin/**"/>
+				<zipfileset dir="build/archives" includes="*installer.jar"/>
+		</zip>
+		<tar destfile="build/archives/yoplet-${build.version}.tar.gz" compression="gzip">
+				<tarfileset dir="${basedir}" excludes="build/**"/>
+				<tarfileset dir="build/archives" includes="*installer.jar"/>			
+		</tar>
+	</target>
+	
+	<target name="release-dist" depends="build-installer">
+		<delete file="build/archives/yoplet.jar"/>
+		<copy file="build/archives/Yoplet-installer.jar" tofile="build/archives/yopletInstaller-${build.version}.jar"/>
+		<ftp server="ftp.berlios.de"
+		       userid="anonymous"
+		       password="anonymous@berlios.de"
+			   remotedir="incoming">
+		    <fileset dir="build/archives" includes="*${build.version}.*"/>
+		  </ftp>
+	</target>
+	
+	<target name="release" depends="release-src, build-installer"/>
+	
+	<target name="build-test" depends="build">
+		<tstamp>
+			<format property="NOW" pattern="MM/dd/yyyy hh:mm aa"/>
+		</tstamp>
+		<delete dir="build/classes"/>
+		<mkdir dir="build/classes"/>
+		<javac  
+			destdir="build/classes" 
+			includes="**/*.java" 
+			deprecation="yes" 
+			debug="${debug}" 
+			source="6" 
+			target="6"
+			includeantruntime="false"
+		>
+			<src path="test/java"/>
+			
+			<classpath>
+				<fileset dir="build/lib" includes="junit.jar"/>
+			</classpath>
+		</javac>
+		
+			<delete file="build/archives/yoplet-test.jar"/>
+			<mkdir dir="build/archives"/>
+			<jar destfile="build/archives/yoplet-test.jar">
+				<manifest>
+					<attribute name="Build-By" value="${user.name}" />
+					<section name="${ant.project.name}">
+						<attribute name="Specification-Title" value="${title}" />
+						<attribute name="Specification-Version" value="${build.version}" />
+						<attribute name="Implementation-Date" value="${NOW}" />
+					</section>
+				</manifest>
+				<fileset dir="build/classes"/>			
+			</jar>		
+		
+	</target>
+		
+	<target name="unit-tests" depends="build-test">
+		
+		<mkdir dir="${reports}/junit"/>
+		<mkdir dir="${reports}/test-result"/>
+		
+		<!-- Run tests -->
+		<junit printsummary="yes" haltonfailure="no" showoutput="yes" fork="yes">
+			<classpath>				
+				<path refid="test.path"/>
+			</classpath>
+			<formatter type="xml"/>
+			<batchtest todir="${reports}/junit">
+				<fileset dir="test/java">
+					<include name="**/*.java"/>
+				</fileset>
+			</batchtest>
+		</junit>
+		<junitreport todir="${reports}/junit">
+			<fileset dir="${reports}/junit">
+				<include name="TEST-*.xml"/>
+			</fileset>
+			<report format="noframes" todir="${reports}/test-result"/>
+		</junitreport>		
+	</target>
+	
+	<target name="run-test" depends="init-browser">
+		<copy todir="${http.location}" overwrite="true">
+				<fileset dir="test"/>
+		</copy>
+		<exec dir="test" executable="${browser-exec}">
+			<arg value="${http.test.url}/test.html"/>
+		</exec>
+	</target>
+	
+	<target name="installer-def" description="installer task creation">
+		<path id="taskdef.cp">
+			<fileset dir="lib/antinstall/lib">
+				<include name="ant-installer-ext.jar"/>
+				<include name="ant-installer.jar"/>
+			</fileset>
+			
+		</path>
+		<taskdef name="installer" classname="org.tp23.antinstaller.taskdefs.Installer" classpathref="taskdef.cp"/>
+		<replace file="src/install-process/antinstall/antinstall-config.xml"  token="@key_name@" value="${key.name}"/>
+		<replace file="src/install-process/antinstall/antinstall-config.xml"  token="@key_organizational_unit@" value="${key.organizational.unit}"/>
+		<replace file="src/install-process/antinstall/antinstall-config.xml"  token="@key_organization@" value="${key.organization}"/>
+		<replace file="src/install-process/antinstall/antinstall-config.xml"  token="@key_city@" value="${key.city}"/>
+		<replace file="src/install-process/antinstall/antinstall-config.xml"  token="@key_state@" value="${key.state}"/>
+		<replace file="src/install-process/antinstall/antinstall-config.xml"  token="@key_country@" value="${key.country}"/>
+		<replace file="src/install-process/antinstall/antinstall-config.xml"  token="@key_alias@" value="${key.alias}"/>		
+		<replace file="src/install-process/antinstall/antinstall-config.xml"  token="@key_store_pass@" value="${key.store.pass}"/>		
+	</target>
+	
+	<target name="build-installer" depends="installer-def"  description="build installer">
+		<delete file="build/archives/Yoplet-installer.jar"/>
+		<delete dir="build/installer"/>
+		<mkdir dir="build/archives"/>
+		<mkdir dir="build/installer/lib"/>
+		<mkdir dir="build/installer/src"/>
+		<copy todir="build/installer/lib" file="build/archives/yoplet.jar"/>
+		<copy todir="build/installer/src">
+			<fileset dir="src/java"/>
+		</copy>
+		<installer 
+			file="build/archives/Yoplet-installer.jar" 
+			compress="true"
+			extractType="SelfExtractor"
+			installConfig="src/install-process/antinstall/antinstall-config.xml"
+			buildFile="src/install-process/build.xml"
+			antInstallLib="lib/antinstall/lib"
+			antLib="lib/antinstall/antlib"
+			validateConfig="true"
+			failOnError="true"
+			icons="bluecurve">
+				<fileset dir="src/install-process/antinstall/" includes="**/resources/*"/>
+				<fileset dir="build/installer"/>
+		</installer>
+	</target>
+	
+</project>
