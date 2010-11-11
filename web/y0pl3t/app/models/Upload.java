@@ -3,9 +3,6 @@ package models;
 import java.util.Calendar;
 import java.util.Date;
 
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-
 import siena.Generator;
 import siena.Id;
 import siena.Model;
