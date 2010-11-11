@@ -4,31 +4,28 @@
 <article class="ui-widget">
 	<h1>What is it about ?</h1>
 
-	<p>Yoplet is some piece of code that helps you handle OS level File System Operation within your browser</p>
+	<p>Yoplet is an applet that helps you handle OS level File System Operations within your browser</p>
 
 	<ul>
-	  <li>Write content to a file</li>
-	  <li>Read content from local file</li>
-	  <li>Watch for a local file alteration (creation, modification, deletion)</li>
+	  	<li>Write content to a file</li>
+	  	<li>Read content from local file</li>
+	  	<li>Watch for a local file alteration (creation, modification, deletion)</li>
+ 		<li>List files (recursively or not) from a selected folder</li>
+ 		<li>Upload files to a configurable target (http upload supported for now)</li>
+		<li>Callback with LiveConnect integration</li>
 	</ul>
 	
-	<h2>Coming up in version 2.0</h2>
-	<ul>
-	  	<li>List files (recursively or not) from a selected folder</li>
-	  	<li>Upload files to a configurable target (http upload supported for now)</li>
-		<li>Callback with LiveConnect integration</li>	
-	</ul>
+	<h1>Demo part</h1>
 	
-	
-	<h2>Demo</h2>
+	<p>Hereunder, you'll find main applet use illustration, with folder selection, file listing / upload / deletion</p>
 
 	<ul class="toolbar">
 		<li class="step1">
-			<h3>Step 1</h3>
+			<h3>Step 1 -  Root Folder selection</h3>
 			<button class="button root">Select Root Folder</button>
 		</li>
 		<li class="step2 ui-helper-hidden">
-			<h3>Step 2</h3>
+			<h3>Step 2 - Lookup options</h3>
 				<em id="root"></em>
 				<fieldset style="border:none">
 					<label>Enter extension filter</label>
@@ -43,7 +40,7 @@
 				</fieldset>
 		</li>		
 		<li class="step3 ui-helper-hidden">
-			<h3>Step 3</h3>
+			<h3>Step 3  - Upload Selection</h3>
 			<button class="button upload">Upload Selected Files</button>			
 		</li>
 	</ul>
@@ -54,10 +51,10 @@
 			<table border="0" class="tablesorter" id="filelist">
 				<thead>
 					<tr>
-						<th>Chemin</th>
-						<th>Taille</th>
+						<th>Path</th>
+						<th>Size (byte)</th>
 						<th>Checksum</th>
-						<th>Sélection</th>						
+						<th>Selection</th>						
 					</tr>
 				</thead>
 				<tbody>
